@@ -7,6 +7,7 @@ const int Scale = 4;
 
 Raylib.InitWindow(Game.W * Scale, Game.H * Scale, "C64 Frogger");
 Raylib.SetTargetFPS(60);
+Sfx.Init();
 
 // Allt ritas till en liten textur som sedan skalas upp utan filtrering
 var screen = Raylib.LoadRenderTexture(Game.W, Game.H);
@@ -34,5 +35,6 @@ while (!Raylib.WindowShouldClose())
     Raylib.EndDrawing();
 }
 
+Sfx.Close();
 Raylib.UnloadRenderTexture(screen);
 Raylib.CloseWindow();

@@ -17,9 +17,16 @@ public class Game
     bool _started;  // kameran börjar tvinga fram scroll först efter första hoppet
     float _time;    // används för att animera vattnet
     string _deathReason = "";
+    int _highScore = HighScore.Load();
+    int _runStartHigh;       // rekordet när rundan började, för att se om man slår det
+    bool _recordJingle;      // har rekordljudet redan spelats den här rundan?
+    bool _newRecord;
 
     void Reset()
     {
+        _runStartHigh = _highScore;
+        _recordJingle = false;
+        _newRecord = false;
         _world = new World();
         _player = new Player();
         _camera = 0;
@@ -81,6 +88,14 @@ public class Game
     {
         _deathReason = reason;
         _state = GameState.GameOver;
+        Sfx.Die();
+
+        if (_player.BestRow > _highScore)
+        {
+            _highScore = _player.BestRow;
+            _newRecord = true;
+            HighScore.Save(_highScore);
+        }
     }
 
     void ReadInput()
@@ -94,6 +109,14 @@ public class Game
         if (dCol == 0 && dRow == 0) return;
         _started = true;
         _player.Hop(dCol, dRow);
+        Sfx.Hop();
+
+        // Fanfar första gången man slår ett tidigare rekord (inte första rundan någonsin)
+        if (!_recordJingle && _runStartHigh > 0 && _player.BestRow > _runStartHigh)
+        {
+            _recordJingle = true;
+            Sfx.Record();
+        }
 
         // Landar man på fast mark hamnar man exakt i en ruta, men på floden följer man stocken
         if (_world.Get(_player.Row).Type != LaneType.River) _player.SnapToGrid();
@@ -223,6 +246,9 @@ public class Game
     {
         Raylib.DrawRectangle(0, 0, W, 12, Palette.Black);
         Raylib.DrawText($"SCORE {_player.BestRow:0000}", 4, 1, 10, Palette.White);
+
+        string hi = $"HI {Math.Max(_highScore, _player.BestRow):0000}";
+        Raylib.DrawText(hi, W - Raylib.MeasureText(hi, 10) - 4, 1, 10, Palette.Yellow);
     }
 
     void DrawCentered(string text, int y, Color color)
@@ -232,15 +258,21 @@ public class Game
     {
         DrawCentered("**** C64 FROGGER ****", 16, Palette.Blue);
         Raylib.DrawText("READY.", 8, 80, 10, Palette.Blue);
+
+        // Blinkande markör som på en riktig C64
+        if ((int)(_time * 2) % 2 == 0) Raylib.DrawRectangle(8, 92, 7, 9, Palette.Blue);
+
+        DrawCentered($"HI-SCORE {_highScore:0000}", 56, Palette.Yellow);
         DrawCentered("PRESS SPACE TO START", 130, Palette.Blue);
         DrawCentered("ARROWS / WASD TO HOP", 146, Palette.Blue);
     }
 
     void DrawGameOver()
     {
-        Raylib.DrawRectangle(60, 70, 200, 50, Palette.Black);
-        DrawCentered($"{_deathReason}  GAME OVER", 78, Palette.White);
-        DrawCentered($"SCORE {_player.BestRow:0000}", 94, Palette.Yellow);
-        DrawCentered("PRESS SPACE", 106, Palette.LightBlue);
+        Raylib.DrawRectangle(50, 64, 220, 66, Palette.Black);
+        DrawCentered($"{_deathReason}  GAME OVER", 72, Palette.White);
+        DrawCentered($"SCORE {_player.BestRow:0000}", 88, Palette.Yellow);
+        if (_newRecord) DrawCentered("NEW HIGH SCORE!", 102, Palette.LightGreen);
+        DrawCentered("PRESS SPACE", 116, Palette.LightBlue);
     }
 }
