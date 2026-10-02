@@ -86,7 +86,7 @@ Principen: **publicera ett tomt skal först.** Då upptäcker vi publiceringspro
 | 3 | Grodan + rörelse + kamera + gräs/väg-lanes + död | Kan spelas och dö |
 | 4 | Flod + stockar, oändlig generering, poäng, svårighet | Kan spela länge |
 | 5 | Highscore, ljud, titel/game over, C64-polish | Alla MVP-punkter gröna |
-| 6 | README, CodeQL/Dependabot (7.6), städning, release `v1.0.0` via CI | Live på itch.io, **dagen före visning** |
+| 6 | README med badges + GIF (7.7), CodeQL/Dependabot (7.6), städning, release `v1.0.0` via CI | Live på itch.io, **dagen före visning** |
 | 7 | Visning | |
 
 Små commits: en förändring per commit, svenska eller engelska meddelanden men tydliga ("Lägg till flod-lane med stockar").
@@ -143,6 +143,25 @@ Gratis för publika repon. Visar studenten att "CI/CD" också är säkerhet, int
 | **Branch-skydd på `main`** | *Om tid finns.* Kräv PR + grön CodeQL | Bara om det inte stör små demo-commits |
 
 Obs: Dependabot kommer att föreslå uppgradering av `actions/checkout` och `setup-dotnet` (Node 20-varningen från v0.2.0). Det löser den varningen åt oss.
+
+### 7.7 Badges och GIF i README (sprint 6)
+
+**Badges** (små status-bilder överst i README, uppdateras automatiskt):
+
+| Badge | Visar | Kräver |
+|-------|-------|--------|
+| Build | "kompilerar" på varje push/PR | Nytt workflow `build.yml` (bara `dotnet build`, ingen publicering) |
+| Release | Senaste publicering (`release.yml`) | Finns redan |
+| CodeQL | Kodanalysen är grön | 7.6 |
+| .NET 10 / C# 14 / Raylib-cs | Teknikstack | Statiska shields.io-badges |
+| itch.io | Länk "Spela / ladda ner" | Statisk badge med länk till spelsidan |
+
+`build.yml` är en ny, liten fil: den kör `dotnet build` vid push och PR, så badge:n betyder något (en tagg-trigger räcker inte, eftersom den bara körs vid release).
+
+**Animerad GIF** av spelet (spelet i rörelse, ca 5–10 s, max ~2 MB):
+- Spelas in lokalt (t.ex. `peek` eller `ffmpeg`), sparas som `docs/demo.gif` och visas överst i README.
+- Detta är en medveten binär fil (undantag från ".md och .cs"), och den hålls liten.
+- Spelas in sist, när spelet är klart.
 
 ## 8. Öppna punkter
 
