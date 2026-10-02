@@ -17,8 +17,11 @@ public class World
     LaneType _lastType = LaneType.Grass;
     int _run; // hur många banor i rad av samma typ
 
-    // 0 = lätt, 1 = max. Når max vid rad 80.
-    public static float Difficulty(int row) => Math.Min(1f, row / 80f);
+    // Rad där svårigheten når max. Högre tal = långsammare ökning, mer tid att se landskapet.
+    const float MaxDifficultyRow = 200f;
+
+    // 0 = lätt, 1 = max
+    public static float Difficulty(int row) => Math.Min(1f, row / MaxDifficultyRow);
 
     public Lane Get(int row) => _lanes[row];
 
