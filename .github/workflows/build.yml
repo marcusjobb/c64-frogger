@@ -21,3 +21,18 @@ jobs:
 
       - name: Bygg
         run: dotnet build src/Frogger -c Release
+
+      # Bygger samma paket som release.yml och virusskannar dem med ClamAV.
+      # Publicerar ingenting.
+      - name: Bygg färdiga paket för skanning
+        run: |
+          dotnet publish src/Frogger -c Release -r win-x64 -o build/win-x64
+          dotnet publish src/Frogger -c Release -r linux-x64 -o build/linux-x64
+
+      - name: Virusskanna med ClamAV
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq clamav
+          sudo systemctl stop clamav-freshclam || true
+          sudo freshclam --quiet
+          clamscan -r --infected build
