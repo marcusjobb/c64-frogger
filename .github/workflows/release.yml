@@ -1,0 +1,43 @@
+# Publicerar spelet till itch.io när man pushar en tagg som börjar med "v".
+# Exempel: git tag v0.2.0 && git push --tags
+name: Publicera till itch.io
+
+on:
+  push:
+    tags: ["v*"]
+
+env:
+  ITCH_TARGET: marcmed/c64froggernostalgia
+
+jobs:
+  publicera:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Hämta koden
+        uses: actions/checkout@v4
+
+      - name: Installera .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Bygg för Windows och Linux
+        run: |
+          dotnet publish src/Frogger -c Release -r win-x64 -o build/win-x64
+          dotnet publish src/Frogger -c Release -r linux-x64 -o build/linux-x64
+
+      - name: Installera butler
+        run: |
+          curl -L -o butler.zip https://broth.itch.zone/butler/linux-amd64/LATEST/archive/default
+          unzip butler.zip -d butler
+          chmod +x butler/butler
+
+      - name: Pusha till itch.io
+        env:
+          # Nyckeln läses från GitHub-secret och skrivs aldrig ut
+          BUTLER_API_KEY: ${{ secrets.BUTLER_API_KEY }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          VERSION="${TAG#v}"
+          butler/butler push build/win-x64 "$ITCH_TARGET:windows" --userversion "$VERSION"
+          butler/butler push build/linux-x64 "$ITCH_TARGET:linux" --userversion "$VERSION"
