@@ -86,7 +86,7 @@ Principen: **publicera ett tomt skal först.** Då upptäcker vi publiceringspro
 | 3 | Grodan + rörelse + kamera + gräs/väg-lanes + död | Kan spelas och dö |
 | 4 | Flod + stockar, oändlig generering, poäng, svårighet | Kan spela länge |
 | 5 | Highscore, ljud, titel/game over, C64-polish | Alla MVP-punkter gröna |
-| 6 | README, städning, release `v1.0.0` via CI | Live på itch.io, **dagen före visning** |
+| 6 | README, CodeQL/Dependabot (7.6), städning, release `v1.0.0` via CI | Live på itch.io, **dagen före visning** |
 | 7 | Visning | |
 
 Små commits: en förändring per commit, svenska eller engelska meddelanden men tydliga ("Lägg till flod-lane med stockar").
@@ -131,6 +131,19 @@ Samma för `linux-x64` → kanal `linux`. Butler zippar och skickar bara ändrin
 | Windows SmartScreen varnar för osignerad .exe | Förklaras för studenten, inte åtgärdat |
 | Butler-nyckel läcker | Bara som secret, aldrig i logg eller fil |
 
+### 7.6 Säkerhet och kvalitet på GitHub (sprint 6, ca 20 min)
+
+Gratis för publika repon. Visar studenten att "CI/CD" också är säkerhet, inte bara publicering.
+
+| Vad | Hur | Klart när |
+|-----|-----|-----------|
+| **CodeQL** (kodanalys för C#) | Settings → Code security → *Code scanning* → *Set up → Default* | Första skanningen är grön under Security-fliken |
+| **Dependabot alerts + updates** | Aktivera i Code security; lägg `.github/dependabot.yml` för `nuget` och `github-actions` (veckovis) | Dependabot öppnar PR för t.ex. `actions/checkout` |
+| **Secret scanning + push protection** | Code security → aktivera båda | Försök att pusha en fejknyckel blockeras (bra demo!) |
+| **Branch-skydd på `main`** | *Om tid finns.* Kräv PR + grön CodeQL | Bara om det inte stör små demo-commits |
+
+Obs: Dependabot kommer att föreslå uppgradering av `actions/checkout` och `setup-dotnet` (Node 20-varningen från v0.2.0). Det löser den varningen åt oss.
+
 ## 8. Öppna punkter
 
 - [ ] Itch-slug för spelet (`marcmed.itch.io/<slug>`)
@@ -138,4 +151,5 @@ Samma för `linux-x64` → kanal `linux`. Butler zippar och skickar bara ändrin
 - [x] Godkännande av planen
 - [ ] README: FAQ "Vanliga fallgropar" byggd på de riktiga frågorna under bygget
   (slug kontra profil-URL, "invalid game", butler login kontra CI-nyckel,
-  nyckeln får aldrig klistras in i chatten, Draft-läge på itch-sidan)
+  nyckeln får aldrig klistras in i chatten, Draft-läge på itch-sidan,
+  att en blå bock i Actions betyder "lyckades" i färgblindsvänligt tema)
