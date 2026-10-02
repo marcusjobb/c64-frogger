@@ -142,11 +142,11 @@ public class Game
         int from = (int)_camera - 4;
         for (int row = from; row <= (int)_camera + 11; row++)
         {
-            if (row < 0) { Raylib.DrawRectangle(0, ScreenY(row), W, Lane.TileSize, Palette.Black); continue; }
+            if (row < 0) { DrawGrass(row); continue; } // gräs bakom startlinjen, inte svart
             var lane = _world.Get(row);
             switch (lane.Type)
             {
-                case LaneType.Grass: DrawGrass(lane); break;
+                case LaneType.Grass: DrawGrass(lane.Row); break;
                 case LaneType.Road: DrawRoad(lane); break;
                 case LaneType.River: DrawRiver(lane); break;
             }
@@ -154,14 +154,14 @@ public class Game
         DrawFrog();
     }
 
-    void DrawGrass(Lane lane)
+    void DrawGrass(int row)
     {
-        int y = ScreenY(lane.Row);
+        int y = ScreenY(row);
         Raylib.DrawRectangle(0, y, W, Lane.TileSize, Palette.Green);
         // Små ljusa gräsrester, placerade av ett enkelt tal så de inte flimrar
         for (int col = 0; col < Lane.Columns; col++)
         {
-            int h = (col * 7 + lane.Row * 13) % 5;
+            int h = Math.Abs(col * 7 + row * 13) % 5;
             if (h == 0) Raylib.DrawRectangle(col * Lane.TileSize + 4, y + 5, 2, 2, Palette.LightGreen);
             if (h == 2) Raylib.DrawRectangle(col * Lane.TileSize + 10, y + 10, 2, 2, Palette.LightGreen);
         }

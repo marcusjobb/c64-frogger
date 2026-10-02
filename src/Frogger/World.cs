@@ -66,14 +66,14 @@ public class World
         // Slumpa. Gräs blir ovanligare och floder vanligare ju längre man kommit.
         float d = Difficulty(row);
         float roll = _rng.NextSingle();
-        if (roll < 0.30f - 0.15f * d) return LaneType.Grass;
+        if (roll < 0.30f - 0.08f * d) return LaneType.Grass;
         return RoadOrRiver(row);
     }
 
     LaneType RoadOrRiver(int row)
     {
         if (row < FirstRiverRow) return LaneType.Road;
-        float riverChance = 0.30f + 0.15f * Difficulty(row);
+        float riverChance = 0.22f + 0.06f * Difficulty(row);
         return _rng.NextSingle() < riverChance ? LaneType.River : LaneType.Road;
     }
 
