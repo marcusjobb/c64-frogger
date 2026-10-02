@@ -135,4 +135,7 @@ Samma för `linux-x64` → kanal `linux`. Butler zippar och skickar bara ändrin
 
 - [ ] Itch-slug för spelet (`marcmed.itch.io/<slug>`)
 - [ ] GitHub-konto/org för repot (inloggad som `marcusjobb`) och att det är publikt
-- [ ] Godkännande av planen
+- [x] Godkännande av planen
+- [ ] README: FAQ "Vanliga fallgropar" byggd på de riktiga frågorna under bygget
+  (slug kontra profil-URL, "invalid game", butler login kontra CI-nyckel,
+  nyckeln får aldrig klistras in i chatten, Draft-läge på itch-sidan)
