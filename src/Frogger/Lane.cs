@@ -2,49 +2,60 @@ using Raylib_cs;
 
 namespace Frogger;
 
-public enum LaneType { Grass, Road }
+public enum LaneType { Grass, Road, River }
 
-public class Car
+// Något som glider i sidled på en bana: en bil på vägen eller en stock i floden.
+public class Mover
 {
     public float X;
     public int Width;
     public Color Color;
 }
 
-// En rad i världen. Gräs är säkert, väg har bilar som rör sig i sidled.
+// En rad i världen. Gräs är säkert, väg har bilar, flod har stockar.
 public class Lane
 {
     public const int TileSize = 16;
     public const int Columns = 20;
+    public const int ScreenWidth = Columns * TileSize;
 
-    // Bilar lever i ett område som är lite bredare än skärmen, så de glider in och ut ur bild
+    // Movers lever i ett område som är lite bredare än skärmen, så de glider in och ut ur bild
     public const float Margin = 32;
-    public const float WrapLength = Columns * TileSize + 2 * Margin;
+    public const float WrapLength = ScreenWidth + 2 * Margin;
 
     public LaneType Type;
     public int Row;
     public float Speed; // pixlar per sekund, negativt = åt vänster
-    public List<Car> Cars = new();
+    public bool Fast;   // en snabb "sportbilsbana", farligare och går att känna igen
+    public List<Mover> Movers = new();
 
     public void Update(float dt)
     {
-        foreach (var car in Cars)
+        foreach (var mover in Movers)
         {
-            car.X += Speed * dt;
-            // Åker bilen ut på ena sidan dyker den upp på den andra
-            if (car.X >= Columns * TileSize + Margin) car.X -= WrapLength;
-            else if (car.X + car.Width <= -Margin) car.X += WrapLength;
+            mover.X += Speed * dt;
+            // Åker den ut på ena sidan dyker den upp på den andra
+            if (mover.X >= ScreenWidth + Margin) mover.X -= WrapLength;
+            else if (mover.X + mover.Width <= -Margin) mover.X += WrapLength;
         }
     }
 
-    // Krockar grodan (som står i kolumn col) med någon bil?
-    public bool HitsCar(int col)
+    // Krockar grodan (vars vänsterkant är playerX) med någon bil?
+    public bool HitsCar(float playerX)
     {
         if (Type != LaneType.Road) return false;
-        float left = col * TileSize + 3;
-        float right = left + TileSize - 6;
-        foreach (var car in Cars)
-            if (car.X < right && car.X + car.Width > left) return true;
+        float left = playerX + 3;
+        float right = playerX + TileSize - 3;
+        foreach (var mover in Movers)
+            if (mover.X < right && mover.X + mover.Width > left) return true;
+        return false;
+    }
+
+    // Står grodans mitt (centerX) på en stock?
+    public bool IsOnLog(float centerX)
+    {
+        foreach (var mover in Movers)
+            if (centerX >= mover.X && centerX <= mover.X + mover.Width) return true;
         return false;
     }
 }

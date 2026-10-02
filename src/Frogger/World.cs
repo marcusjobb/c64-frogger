@@ -8,6 +8,9 @@ public class World
     static readonly Color[] CarColors =
         { Palette.Red, Palette.Yellow, Palette.Cyan, Palette.Orange, Palette.Purple };
 
+    const int FirstRiverRow = 4;     // inga floder förrän spelaren hunnit värma upp
+    const int SportsCarFromRow = 12; // inga sportbilar de första raderna
+
     readonly Dictionary<int, Lane> _lanes = new();
     readonly Random _rng = new();
     int _topRow = -1;
@@ -42,7 +45,9 @@ public class World
         _lastType = type;
 
         var lane = new Lane { Row = row, Type = type };
-        if (type == LaneType.Road) FillRoad(lane, Difficulty(row));
+        float d = Difficulty(row);
+        if (type == LaneType.Road) FillRoad(lane, d);
+        else if (type == LaneType.River) FillRiver(lane, d);
         _lanes[row] = lane;
     }
 
@@ -52,27 +57,62 @@ public class World
 
         // Aldrig för många av samma i rad
         if (_lastType == LaneType.Road && _run >= 3) return LaneType.Grass;
-        if (_lastType == LaneType.Grass && _run >= 2) return LaneType.Road;
+        if (_lastType == LaneType.River && _run >= 2) return LaneType.Grass;
+        if (_lastType == LaneType.Grass && _run >= 2) return RoadOrRiver(row);
 
-        float roadChance = 0.55f + 0.35f * Difficulty(row);
-        return _rng.NextSingle() < roadChance ? LaneType.Road : LaneType.Grass;
+        // Slumpa. Gräs blir ovanligare och floder vanligare ju längre man kommit.
+        float d = Difficulty(row);
+        float roll = _rng.NextSingle();
+        if (roll < 0.30f - 0.15f * d) return LaneType.Grass;
+        return RoadOrRiver(row);
+    }
+
+    LaneType RoadOrRiver(int row)
+    {
+        if (row < FirstRiverRow) return LaneType.Road;
+        float riverChance = 0.30f + 0.15f * Difficulty(row);
+        return _rng.NextSingle() < riverChance ? LaneType.River : LaneType.Road;
     }
 
     void FillRoad(Lane lane, float d)
     {
         float speed = 30 + 60 * d + _rng.Next(0, 20);
+
+        // Då och då en sportbilsbana: dubbelt så snabb, men färre bilar. Vanligare högre upp.
+        lane.Fast = lane.Row >= SportsCarFromRow && _rng.NextSingle() < 0.10f + 0.20f * d;
+        if (lane.Fast) speed *= 2f;
         lane.Speed = _rng.Next(2) == 0 ? speed : -speed;
 
-        // Tätare trafik ju högre svårighet
-        int minGap = (int)(64 - 24 * d);
-        int maxGap = (int)(130 - 40 * d);
+        // Tätare trafik ju högre svårighet. Snabba banor får större luckor så de går att klara.
+        int minGap = (int)(64 - 24 * d) + (lane.Fast ? 40 : 0);
+        int maxGap = (int)(130 - 40 * d) + (lane.Fast ? 60 : 0);
 
         float x = -Lane.Margin + _rng.Next(0, 40);
         while (true)
         {
             int width = _rng.Next(4) == 0 ? 32 : 16; // ibland en lastbil
             if (x + width + minGap > -Lane.Margin + Lane.WrapLength) break;
-            lane.Cars.Add(new Car { X = x, Width = width, Color = CarColors[_rng.Next(CarColors.Length)] });
+            lane.Movers.Add(new Mover { X = x, Width = width, Color = CarColors[_rng.Next(CarColors.Length)] });
+            x += width + _rng.Next(minGap, maxGap);
+        }
+    }
+
+    void FillRiver(Lane lane, float d)
+    {
+        float speed = 20 + 35 * d + _rng.Next(0, 15);
+        lane.Speed = _rng.Next(2) == 0 ? speed : -speed;
+
+        // Längre svårighet = kortare stockar och större luckor
+        int[] widths = d < 0.5f ? new[] { 48, 64, 80 } : new[] { 32, 48, 64 };
+        int minGap = 24;
+        int maxGap = (int)(48 + 40 * d);
+
+        float x = -Lane.Margin + _rng.Next(0, 30);
+        while (true)
+        {
+            int width = widths[_rng.Next(widths.Length)];
+            if (x + width + minGap > -Lane.Margin + Lane.WrapLength) break;
+            lane.Movers.Add(new Mover { X = x, Width = width, Color = Palette.Orange });
             x += width + _rng.Next(minGap, maxGap);
         }
     }

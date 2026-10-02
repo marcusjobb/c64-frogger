@@ -15,6 +15,8 @@ public class Game
     Player _player = new();
     float _camera;  // vilken rad kameran tittar på (decimaltal = mjuk scroll)
     bool _started;  // kameran börjar tvinga fram scroll först efter första hoppet
+    float _time;    // används för att animera vattnet
+    string _deathReason = "";
 
     void Reset()
     {
@@ -28,6 +30,7 @@ public class Game
 
     public void Update(float dt)
     {
+        _time += dt;
         switch (_state)
         {
             case GameState.Title:
@@ -45,6 +48,10 @@ public class Game
         ReadInput();
         _world.Update(dt);
 
+        // På floden följer grodan med stocken den står på
+        var lane = _world.Get(_player.Row);
+        if (lane.Type == LaneType.River) _player.X += lane.Speed * dt;
+
         // Kameran följer grodan uppåt och scrollar dessutom långsamt av sig själv
         // så att man inte kan stå still. Det blir snabbare ju längre man kommit.
         if (_started)
@@ -52,14 +59,28 @@ public class Game
             float autoScroll = 0.25f + 0.4f * World.Difficulty(_player.Row);
             _camera += autoScroll * dt;
         }
-        _camera = Math.Max(_camera, _camera + (_player.Row - _camera) * Math.Min(1f, 6f * dt));
+        if (_player.Row > _camera)
+            _camera += (_player.Row - _camera) * Math.Min(1f, 6f * dt);
 
         _world.EnsureUpTo((int)_camera + 16);
         _world.RemoveBelow((int)_camera - 6);
 
-        // Död: bil, eller för långt bakom skärmen
-        if (_world.Get(_player.Row).HitsCar(_player.Col) || _player.Row <= _camera - 3)
-            _state = GameState.GameOver;
+        CheckDeath(lane);
+    }
+
+    void CheckDeath(Lane lane)
+    {
+        if (lane.HitsCar(_player.X)) Die("SPLAT!");
+        else if (lane.Type == LaneType.River &&
+                 (!lane.IsOnLog(_player.CenterX) || _player.CenterX < 0 || _player.CenterX > W))
+            Die("SPLASH!");
+        else if (_player.Row <= _camera - 3) Die("TOO SLOW!");
+    }
+
+    void Die(string reason)
+    {
+        _deathReason = reason;
+        _state = GameState.GameOver;
     }
 
     void ReadInput()
@@ -73,6 +94,9 @@ public class Game
         if (dCol == 0 && dRow == 0) return;
         _started = true;
         _player.Hop(dCol, dRow);
+
+        // Landar man på fast mark hamnar man exakt i en ruta, men på floden följer man stocken
+        if (_world.Get(_player.Row).Type != LaneType.River) _player.SnapToGrid();
     }
 
     // ---- Ritning ----
@@ -97,8 +121,12 @@ public class Game
         {
             if (row < 0) { Raylib.DrawRectangle(0, ScreenY(row), W, Lane.TileSize, Palette.Black); continue; }
             var lane = _world.Get(row);
-            if (lane.Type == LaneType.Grass) DrawGrass(lane);
-            else DrawRoad(lane);
+            switch (lane.Type)
+            {
+                case LaneType.Grass: DrawGrass(lane); break;
+                case LaneType.Road: DrawRoad(lane); break;
+                case LaneType.River: DrawRiver(lane); break;
+            }
         }
         DrawFrog();
     }
@@ -123,22 +151,63 @@ public class Game
         for (int x = 0; x < W; x += 16)
             Raylib.DrawRectangle(x + 4, y + 7, 8, 2, Palette.Grey);
 
-        foreach (var car in lane.Cars)
+        foreach (var mover in lane.Movers)
         {
-            int x = (int)car.X;
-            Raylib.DrawRectangle(x, y + 3, car.Width, 10, car.Color);
-            Raylib.DrawRectangle(x + 2, y + 1, car.Width - 4, 3, car.Color);   // tak
-            Raylib.DrawRectangle(x + 2, y + 12, 3, 3, Palette.Black);          // hjul
-            Raylib.DrawRectangle(x + car.Width - 5, y + 12, 3, 3, Palette.Black);
-            // Strålkastare på den sida bilen kör mot
-            int light = lane.Speed > 0 ? x + car.Width - 2 : x;
-            Raylib.DrawRectangle(light, y + 5, 2, 3, Palette.White);
+            int x = (int)mover.X;
+            if (lane.Fast) DrawSportsCar(mover, x, y, lane.Speed > 0);
+            else DrawCar(mover, x, y, lane.Speed > 0);
+        }
+    }
+
+    void DrawCar(Mover car, int x, int y, bool right)
+    {
+        Raylib.DrawRectangle(x, y + 3, car.Width, 10, car.Color);
+        Raylib.DrawRectangle(x + 2, y + 1, car.Width - 4, 3, car.Color);   // tak
+        Raylib.DrawRectangle(x + 2, y + 12, 3, 3, Palette.Black);          // hjul
+        Raylib.DrawRectangle(x + car.Width - 5, y + 12, 3, 3, Palette.Black);
+        // Strålkastare på den sida bilen kör mot
+        Raylib.DrawRectangle(right ? x + car.Width - 2 : x, y + 5, 2, 3, Palette.White);
+    }
+
+    // Låg och spetsig sportbil med vit rand, så man känner igen den på långt håll
+    void DrawSportsCar(Mover car, int x, int y, bool right)
+    {
+        Raylib.DrawRectangle(x, y + 6, car.Width, 6, car.Color);
+        Raylib.DrawRectangle(right ? x + 4 : x + car.Width - 10, y + 3, 6, 4, car.Color); // låg kupé
+        Raylib.DrawRectangle(x + 1, y + 8, car.Width - 2, 1, Palette.White);               // racingrand
+        Raylib.DrawRectangle(x + 2, y + 11, 3, 3, Palette.Black);
+        Raylib.DrawRectangle(x + car.Width - 5, y + 11, 3, 3, Palette.Black);
+        Raylib.DrawRectangle(right ? x + car.Width - 2 : x, y + 7, 2, 2, Palette.White);
+    }
+
+    void DrawRiver(Lane lane)
+    {
+        int y = ScreenY(lane.Row);
+        Raylib.DrawRectangle(0, y, W, Lane.TileSize, Palette.Blue);
+
+        // Vågor som sakta glider åt samma håll som strömmen
+        int shift = (int)(_time * lane.Speed * 0.5f);
+        for (int x = -16; x < W + 16; x += 16)
+        {
+            int wx = x + ((shift % 16) + 16) % 16;
+            Raylib.DrawRectangle(wx + 2, y + 4, 4, 1, Palette.LightBlue);
+            Raylib.DrawRectangle(wx + 9, y + 11, 4, 1, Palette.LightBlue);
+        }
+
+        foreach (var log in lane.Movers)
+        {
+            int x = (int)log.X;
+            Raylib.DrawRectangle(x, y + 2, log.Width, 12, Palette.Orange);
+            Raylib.DrawRectangle(x, y + 2, log.Width, 2, Palette.Brown);   // bark upptill
+            Raylib.DrawRectangle(x, y + 12, log.Width, 2, Palette.Brown);  // bark nedtill
+            for (int k = 12; k < log.Width - 6; k += 14)                   // årsringar
+                Raylib.DrawRectangle(x + k, y + 7, 4, 2, Palette.Brown);
         }
     }
 
     void DrawFrog()
     {
-        int x = _player.Col * Lane.TileSize;
+        int x = (int)_player.X;
         int y = ScreenY(_player.Row);
         var body = _state == GameState.GameOver ? Palette.Red : Palette.Yellow;
         Raylib.DrawRectangle(x + 3, y + 4, 10, 9, body);
@@ -170,7 +239,7 @@ public class Game
     void DrawGameOver()
     {
         Raylib.DrawRectangle(60, 70, 200, 50, Palette.Black);
-        DrawCentered("SPLAT!  GAME OVER", 78, Palette.White);
+        DrawCentered($"{_deathReason}  GAME OVER", 78, Palette.White);
         DrawCentered($"SCORE {_player.BestRow:0000}", 94, Palette.Yellow);
         DrawCentered("PRESS SPACE", 106, Palette.LightBlue);
     }
