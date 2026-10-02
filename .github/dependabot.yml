@@ -1,0 +1,12 @@
+# Dependabot kollar varje vecka om det finns nyare versioner och öppnar en pull request.
+version: 2
+updates:
+  - package-ecosystem: nuget
+    directory: /src/Frogger
+    schedule:
+      interval: weekly
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly

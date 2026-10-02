@@ -1,0 +1,29 @@
+# Kodanalys (CodeQL) som letar efter säkerhetsproblem i C#-koden.
+# Resultaten syns under fliken Security → Code scanning på GitHub.
+name: CodeQL
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    - cron: "0 5 * * 1" # varje måndag, så nya sårbarheter hittas även när koden står still
+
+jobs:
+  analysera:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      security-events: write # krävs för att få skriva resultaten till GitHub
+    steps:
+      - name: Hämta koden
+        uses: actions/checkout@v4
+
+      - name: Starta CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: csharp
+          build-mode: none # C# behöver inget bygge för analysen
+
+      - name: Analysera
+        uses: github/codeql-action/analyze@v3
