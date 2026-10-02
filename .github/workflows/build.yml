@@ -1,0 +1,23 @@
+# Kontrollerar att koden kompilerar vid varje push och pull request.
+# Publicerar ingenting, det gör release.yml när man taggar.
+name: Bygg
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  bygg:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Hämta koden
+        uses: actions/checkout@v4
+
+      - name: Installera .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Bygg
+        run: dotnet build src/Frogger -c Release
