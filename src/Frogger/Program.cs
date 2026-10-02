@@ -17,7 +17,9 @@ while (!Raylib.WindowShouldClose())
     // Rita i lilla världen
     Raylib.BeginTextureMode(screen);
     Raylib.ClearBackground(Palette.LightBlue);
-    Raylib.DrawText("**** C64 FROGGER ****", 40, 40, 10, Palette.Blue);
+    // Rubriken centreras vågrätt genom att mäta textbredden
+    const string title = "**** C64 FROGGER ****";
+    Raylib.DrawText(title, (W - Raylib.MeasureText(title, 10)) / 2, 16, 10, Palette.Blue);
     Raylib.DrawText("READY.", 8, 80, 10, Palette.Blue);
     Raylib.EndTextureMode();
 
