@@ -71,7 +71,9 @@ Spelet är klart när:
 
 **MVP (måste):** gräs + väg + flod, oändlig generering, poäng, highscore, enkelt ljud, C64-palett och pixelfont (inbyggd raylib-font, skalad), CI-publicering.
 
-**Om tid finns:** tåg-lane, C64-blå ram runt skärmen (border), "READY."-blinkande cursor på titelskärmen, ljud i flera toner, gamepad, macOS-build, riktig installer.
+**Klart i sprint 4 (tillägg från Marcus):** sportbilsbanor, dubbel fart och låg sportbil med vit rand, vanligare högre upp.
+
+**Om tid finns:** krokodiler i floden (en stock med öppen mun som bara är farlig i ena änden, kräver animation och en delad hitbox), tåg-lane, C64-blå ram runt skärmen (border), "READY."-blinkande cursor på titelskärmen, ljud i flera toner, gamepad, macOS-build, riktig installer.
 
 **Medvetet utanför scope:** meny/inställningar, flera liv, banor med design, bildfiler, web-build.
 
